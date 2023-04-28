@@ -1,6 +1,8 @@
+(function() {
 function prepareSite() {
   document.head.replaceChildren()
   document.body.replaceChildren()
+  document.body.removeAttribute('style')
   const style = document.createElement('style')
   style.textContent = `
     * {
@@ -91,8 +93,16 @@ function prepareSite() {
       line-height: 1.5rem;
     }
 
-    .newdoc-button, .delete-button {
+    .newdoc-button, .delete-button, .export-button {
       color: white;
+    }
+
+    .export-button {
+      position: absolute;
+      bottom: 5px;
+      right: 5px;
+      background-color: #3F51B5;
+      padding: 3px 5px;
     }
 
     .newdoc-button {
@@ -167,10 +177,8 @@ prepareSite()
 const container = document.createElement('div')
 container.id = 'container'
 
-
 const toolbar = document.createElement('div')
 toolbar.id = 'toolbar'
-
 
 const filenameInput = document.createElement('input')
 filenameInput.type = 'text'
@@ -178,28 +186,26 @@ filenameInput.id = 'filename'
 filenameInput.placeholder = 'Enter file name'
 
 const renameButton = document.createElement('button')
-renameButton.classList.add('button', 'rename-button');
-renameButton.textContent = '🖉';
+renameButton.classList.add('button', 'rename-button')
+renameButton.textContent = '🖉'
 
 const inputContainer = document.createElement('div')
 inputContainer.classList.add('sub-container')
 inputContainer.appendChild(filenameInput)
 inputContainer.appendChild(renameButton)
 
-
 const newDocButton = document.createElement('button')
-newDocButton.classList.add('button', 'newdoc-button');
+newDocButton.classList.add('button', 'newdoc-button')
 newDocButton.textContent = 'New document'
 
-const deleteButton = document.createElement('button');
-deleteButton.classList.add('button', 'delete-button');
-deleteButton.textContent = 'Delete';
+const deleteButton = document.createElement('button')
+deleteButton.classList.add('button', 'delete-button')
+deleteButton.textContent = 'Delete'
 
 const buttonsContainer = document.createElement('div')
 buttonsContainer.classList.add('buttons-container')
 buttonsContainer.appendChild(newDocButton)
 buttonsContainer.appendChild(deleteButton)
-
 
 const savesMenu = document.createElement('select')
 savesMenu.classList.add('saves-menu')
@@ -212,13 +218,11 @@ menuContainer.classList.add('sub-container')
 menuContainer.appendChild(savesMenu)
 menuContainer.appendChild(savingSpinner)
 
-
 toolbar.appendChild(menuContainer)
 toolbar.appendChild(inputContainer)
 toolbar.appendChild(buttonsContainer)
 
 container.appendChild(toolbar)
-
 
 const textarea = document.createElement('textarea')
 textarea.id = 'editor'
@@ -227,23 +231,25 @@ container.appendChild(textarea)
 
 document.body.appendChild(container)
 
-
-const themeToggleButton = document.createElement('button');
-themeToggleButton.classList.add('button', 'theme-button');
-themeToggleButton.textContent = '🌣';
+const themeToggleButton = document.createElement('button')
+themeToggleButton.classList.add('button', 'theme-button')
+themeToggleButton.textContent = '🌣'
 document.body.classList.add('dark-theme')
+document.body.appendChild(themeToggleButton)
 
-document.body.appendChild(themeToggleButton);
-
-
+const exportDocumentsButton = document.createElement('a')
+exportDocumentsButton.classList.add('button', 'export-button')
+exportDocumentsButton.textContent = 'Export documents'
+exportDocumentsButton.download = 'savedDocuments.json'
+document.body.appendChild(exportDocumentsButton)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 const lsEntry = 'my-shitty-text-editor-saves'
 const savedDocuments = getSavedDocuments()
 
-let currentDocName = Object.keys(savedDocuments)[Object.keys(savedDocuments).length - 1] || null
+let currentDocName =
+  Object.keys(savedDocuments)[Object.keys(savedDocuments).length - 1] || null
 if (currentDocName) {
   updateName()
   filenameInput.disabled = true
@@ -256,20 +262,19 @@ if (currentDocName) {
   newDocument()
 }
 
-filenameInput.addEventListener('keyup', function(event) {
-  if (event.keyCode === 13) {
-    // Enter key was pressed
+filenameInput.addEventListener('keyup', function (event) {
+  if (event.code === 'Enter') {
     textarea.focus()
   }
 })
 
-filenameInput.addEventListener('blur', event => {
+filenameInput.addEventListener('blur', () => {
   if (filenameInput.value !== currentDocName) {
     if (!validName(filenameInput.value)) {
       window.alert('File name invalid')
       return
     }
-    
+
     rename()
     savedDocuments[filenameInput.value] = textarea.value
     saveDocuments()
@@ -277,47 +282,51 @@ filenameInput.addEventListener('blur', event => {
   filenameInput.disabled = true
 })
 
-renameButton.addEventListener('click', event => {
+renameButton.addEventListener('click', () => {
   filenameInput.disabled = false
   filenameInput.focus()
   filenameInput.select()
 })
 
-savesMenu.addEventListener('change', event => {
+savesMenu.addEventListener('change', () => {
   saveDocuments()
   changeDocument(savesMenu.selectedOptions[0].value)
 })
 
 let iid = null
 const interval = 600
-textarea.addEventListener('input', event => {
+textarea.addEventListener('input', () => {
   clearTimeout(iid)
   iid = setTimeout(saveDocuments, interval)
   savingSpinner.classList.remove('saved')
   savingSpinner.classList.add('saving')
 })
 
-newDocButton.addEventListener('click', event => {
+newDocButton.addEventListener('click', () => {
   saveDocuments()
   newDocument()
 })
 
-deleteButton.addEventListener('click', event => {
+deleteButton.addEventListener('click', () => {
   deleteDocument()
 })
 
-themeToggleButton.addEventListener('click', event => {
+themeToggleButton.addEventListener('click', () => {
   if (document.body.classList.contains('dark-theme')) {
     document.body.classList.remove('dark-theme')
     themeToggleButton.textContent = '🌔'
   } else {
     document.body.classList.add('dark-theme')
-    themeToggleButton.textContent = '🌣';
+    themeToggleButton.textContent = '🌣'
   }
 })
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+exportDocumentsButton.addEventListener('click', () => {
+  saveDocuments()
+  exportDocuments()
+})
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 function saveDocuments() {
   saveCurrentDocument()
@@ -375,12 +384,14 @@ function addDropdownOption(name) {
 function rename() {
   delete savedDocuments[currentDocName]
   currentDocName = filenameInput.value
-  savesMenu.selectedOptions[0].value = savesMenu.selectedOptions[0].textContent = currentDocName
+  savesMenu.selectedOptions[0].value =
+    savesMenu.selectedOptions[0].textContent = currentDocName
   saveCurrentDocument()
 }
 
 function deleteDocument() {
-  if (!window.confirm(`Are you sure you want to delelte "${currentDocName}""?`)) return
+  if (!window.confirm(`Are you sure you want to delelte "${currentDocName}""?`))
+    return
   delete savedDocuments[currentDocName]
   localStorage.setItem(lsEntry, JSON.stringify(savedDocuments))
   savesMenu.selectedOptions[0].remove()
@@ -393,3 +404,11 @@ function changeDocument(docName) {
   textarea.value = savedDocuments[docName]
   updateName()
 }
+
+function exportDocuments() {
+  const jsonStr = JSON.stringify(savedDocuments)
+  const blob = new Blob([jsonStr], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  exportDocumentsButton.href = url
+}
+})()
