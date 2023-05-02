@@ -30,6 +30,7 @@ body {
   resize: horizontal;
   border-radius: 4px;
   tab-size: 2;
+  white-space: nowrap;
 }
 
 #toolbar {
@@ -155,6 +156,7 @@ body {
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   box-shadow: inset 0 0 5px grey;
