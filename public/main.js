@@ -73,7 +73,7 @@ textarea.addEventListener('input', () => {
 textarea.addEventListener('keydown', (event) => {
   if (event.code === 'Tab') {
     event.preventDefault()
-    indentSelection()
+    event.shiftKey ? indentSelection(-1) : indentSelection(1)
   } else if (event.code === 'Enter') {
     event.preventDefault()
     document.execCommand('insertText', false, '\n')
@@ -238,11 +238,17 @@ function getEndOfLinePos(lineIdx) {
   return getStartOfLinePos(lineIdx + 1) - 1
 }
 
-function indentLine(lineIdx) {
-  ++documents[currentDocName][lineIdx].tabs
+function indentLine(lineIdx, tabCount) {
+  const line = documents[currentDocName][lineIdx]
+  line.tabs += tabCount
+  if (line.tabs < 0) {
+    tabCount -= line.tabs
+    line.tabs = 0
+  }
+  return tabCount
 }
 
-function indentSelection() {
+function indentSelection(tabCount) {
   const startPos = textarea.selectionStart
   const endPos = textarea.selectionEnd
   const startIdx = getLineIdx(startPos)
@@ -253,8 +259,9 @@ function indentSelection() {
     getEndOfLinePos(endIdx)
   )
 
-  for (let i = startIdx; i <= endIdx; ++i) {
-    indentLine(i)
+  let firstLineTabs = indentLine(startIdx,tabCount), totTabs = firstLineTabs
+  for (let i = startIdx + 1; i <= endIdx; ++i) {
+    totTabs += indentLine(i, tabCount)
   }
 
   document.execCommand(
@@ -265,11 +272,9 @@ function indentSelection() {
       .map((line) => '\t'.repeat(line.tabs) + line.value)
       .join('\n')
   )
-  textarea.setSelectionRange(startPos + 1, endPos + endIdx - startIdx + 1)
+  textarea.setSelectionRange(startPos + firstLineTabs, endPos + totTabs)
   saveDocuments()
 }
-
-// Falta implementar outdent.
 
 // }
 
