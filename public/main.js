@@ -30,7 +30,7 @@ if (currentDocName) {
   newDocument()
 }
 
-filenameInput.addEventListener('keyup', function (event) {
+filenameInput.addEventListener('keyup', function(event) {
   if (event.code === 'Enter') {
     textarea.focus()
   }
@@ -62,15 +62,21 @@ savesMenu.addEventListener('change', () => {
 
 let iid = null
 const interval = 600
-textarea.addEventListener('input', (event) => {
+textarea.addEventListener('input', () => {
   updateCurrentDocument()
   clearTimeout(iid)
   iid = setTimeout(saveDocuments, interval)
   savingSpinner.classList.remove('saved')
   savingSpinner.classList.add('saving')
-  // Mover a keydown con enter y prevent default y mandar execCommand con either alguna que meta una newilne
-  // o inputText con '\n' + los '\t' necesarios
-  if (event.inputType === 'insertLineBreak') {
+})
+
+textarea.addEventListener('keydown', (event) => {
+  if (event.code === 'Tab') {
+    event.preventDefault()
+    indentSelection()
+  } else if (event.code === 'Enter') {
+    event.preventDefault()
+    document.execCommand('insertText', false, '\n')
     const lineIdx = getLineIdx(textarea.selectionStart)
     documents[currentDocName][lineIdx].tabs = documents[currentDocName][lineIdx - 1].tabs
     document.execCommand(
@@ -80,6 +86,7 @@ textarea.addEventListener('input', (event) => {
     )
   }
 })
+
 
 newDocButton.addEventListener('click', () => {
   saveDocuments()
@@ -103,13 +110,6 @@ themeToggleButton.addEventListener('click', () => {
 exportDocumentsButton.addEventListener('click', () => {
   saveDocuments()
   exportDocuments()
-})
-
-textarea.addEventListener('keydown', (event) => {
-  if (event.code === 'Tab') {
-    event.preventDefault()
-    indentSelection()
-  }
 })
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -268,6 +268,9 @@ function indentSelection() {
   textarea.setSelectionRange(startPos + 1, endPos + endIdx - startIdx + 1)
   saveDocuments()
 }
+
+// Falta implementar outdent.
+
 // }
 
 // setup()
