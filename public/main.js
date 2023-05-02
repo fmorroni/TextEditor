@@ -1,187 +1,273 @@
+// function setup() {
 const lsEntry = 'my-shitty-text-editor-saves'
 
-function setup() {
-  const filenameInput = document.getElementById('filename')
-  const renameButton = document.querySelector('.rename-button')
+const filenameInput = document.getElementById('filename')
+const renameButton = document.querySelector('.rename-button')
 
-  const newDocButton = document.querySelector('.newdoc-button')
-  const deleteButton = document.querySelector('.delete-button')
+const newDocButton = document.querySelector('.newdoc-button')
+const deleteButton = document.querySelector('.delete-button')
 
-  const savesMenu = document.querySelector('.saves-menu')
-  const savingSpinner = document.getElementById('saving-spinner')
+const savesMenu = document.querySelector('.saves-menu')
+const savingSpinner = document.getElementById('saving-spinner')
 
-  const textarea = document.getElementById('editor')
+const textarea = document.getElementById('editor')
 
-  const themeToggleButton = document.querySelector('.theme-button')
-  const exportDocumentsButton = document.querySelector('.export-button')
+const themeToggleButton = document.querySelector('.theme-button')
+const exportDocumentsButton = document.querySelector('.export-button')
 
-  const savedDocuments = getSavedDocuments()
+const documents = getSavedDocuments()
 
-  let currentDocName =
-    Object.keys(savedDocuments)[Object.keys(savedDocuments).length - 1] || null
-  if (currentDocName) {
-    updateName()
-    filenameInput.disabled = true
-    textarea.value = savedDocuments[currentDocName]
+let currentDocName =
+  Object.keys(documents)[Object.keys(documents).length - 1] || null
+if (currentDocName) {
+  filenameInput.disabled = true
+  changeDocument(currentDocName)
 
-    for (const docName of Object.keys(savedDocuments)) {
-      addDropdownOption(docName)
-    }
-  } else {
-    newDocument()
+  for (const docName of Object.keys(documents)) {
+    addDropdownOption(docName)
   }
+} else {
+  newDocument()
+}
 
-  filenameInput.addEventListener('keyup', function (event) {
-    if (event.code === 'Enter') {
-      textarea.focus()
-    }
-  })
-
-  filenameInput.addEventListener('blur', () => {
-    if (filenameInput.value !== currentDocName) {
-      if (!validName(filenameInput.value)) {
-        window.alert('File name invalid')
-        return
-      }
-
-      rename()
-      savedDocuments[filenameInput.value] = textarea.value
-      saveDocuments()
-    }
-    filenameInput.disabled = true
-  })
-
-  renameButton.addEventListener('click', () => {
-    filenameInput.disabled = false
-    filenameInput.focus()
-    filenameInput.select()
-  })
-
-  savesMenu.addEventListener('change', () => {
-    saveDocuments()
-    changeDocument(savesMenu.selectedOptions[0].value)
-  })
-
-  let iid = null
-  const interval = 600
-  textarea.addEventListener('input', () => {
-    clearTimeout(iid)
-    iid = setTimeout(saveDocuments, interval)
-    savingSpinner.classList.remove('saved')
-    savingSpinner.classList.add('saving')
-  })
-
-  newDocButton.addEventListener('click', () => {
-    saveDocuments()
-    newDocument()
-  })
-
-  deleteButton.addEventListener('click', () => {
-    deleteDocument()
-  })
-
-  themeToggleButton.addEventListener('click', () => {
-    if (document.body.classList.contains('dark-theme')) {
-      document.body.classList.remove('dark-theme')
-      themeToggleButton.textContent = '🌔'
-    } else {
-      document.body.classList.add('dark-theme')
-      themeToggleButton.textContent = '🌣'
-    }
-  })
-
-  exportDocumentsButton.addEventListener('click', () => {
-    saveDocuments()
-    exportDocuments()
-  })
-
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  function saveDocuments() {
-    saveCurrentDocument()
-    localStorage.setItem(lsEntry, JSON.stringify(savedDocuments))
-    savingSpinner.classList.remove('saving')
-    savingSpinner.classList.add('saved')
+filenameInput.addEventListener('keyup', function (event) {
+  if (event.code === 'Enter') {
+    textarea.focus()
   }
+})
 
-  function getSavedDocuments() {
-    let documents = {}
-    try {
-      documents = JSON.parse(localStorage.getItem(lsEntry)) || {}
-    } finally {
-      return documents
-    }
-  }
-
-  function validName(name) {
-    if (savedDocuments[name] != null || !name) return false
-    else return true
-  }
-
-  function newDocument() {
-    const newDocName = 'New file'
-    if (!validName(newDocName)) {
-      window.alert('Change name to existing new file')
+filenameInput.addEventListener('blur', () => {
+  if (filenameInput.value !== currentDocName) {
+    if (!validName(filenameInput.value)) {
+      window.alert('File name invalid')
       return
     }
-    currentDocName = newDocName
-    textarea.value = ''
-    saveCurrentDocument()
-    addDropdownOption(currentDocName)
-    filenameInput.value = ''
-    filenameInput.disabled = false
-    // filenameInput.focus()
-  }
 
-  function updateName() {
-    filenameInput.value = currentDocName
-    filenameInput.disabled = true
+    rename()
+    saveDocuments()
   }
+  filenameInput.disabled = true
+})
 
-  function saveCurrentDocument() {
-    savedDocuments[currentDocName] = textarea.value
-  }
+renameButton.addEventListener('click', () => {
+  filenameInput.disabled = false
+  filenameInput.focus()
+  filenameInput.select()
+})
 
-  function addDropdownOption(name) {
-    const newDocEntry = document.createElement('option')
-    newDocEntry.value = name
-    newDocEntry.textContent = name
-    newDocEntry.selected = true
-    savesMenu.prepend(newDocEntry)
-  }
+savesMenu.addEventListener('change', () => {
+  saveDocuments()
+  changeDocument(savesMenu.selectedOptions[0].value)
+})
 
-  function rename() {
-    delete savedDocuments[currentDocName]
-    currentDocName = filenameInput.value
-    savesMenu.selectedOptions[0].value =
-      savesMenu.selectedOptions[0].textContent = currentDocName
-    saveCurrentDocument()
-  }
-
-  function deleteDocument() {
-    if (
-      !window.confirm(`Are you sure you want to delelte "${currentDocName}""?`)
+let iid = null
+const interval = 600
+textarea.addEventListener('input', (event) => {
+  updateCurrentDocument()
+  clearTimeout(iid)
+  iid = setTimeout(saveDocuments, interval)
+  savingSpinner.classList.remove('saved')
+  savingSpinner.classList.add('saving')
+  // Mover a keydown con enter y prevent default y mandar execCommand con either alguna que meta una newilne
+  // o inputText con '\n' + los '\t' necesarios
+  if (event.inputType === 'insertLineBreak') {
+    const lineIdx = getLineIdx(textarea.selectionStart)
+    documents[currentDocName][lineIdx].tabs = documents[currentDocName][lineIdx - 1].tabs
+    document.execCommand(
+      'insertText',
+      false,
+      '\t'.repeat(documents[currentDocName][lineIdx - 1].tabs)
     )
-      return
-    delete savedDocuments[currentDocName]
-    localStorage.setItem(lsEntry, JSON.stringify(savedDocuments))
-    savesMenu.selectedOptions[0].remove()
-    if (!savesMenu.selectedOptions[0]) newDocument()
-    else changeDocument(savesMenu.selectedOptions[0].value)
   }
+})
 
-  function changeDocument(docName) {
-    currentDocName = docName
-    textarea.value = savedDocuments[docName]
-    updateName()
+newDocButton.addEventListener('click', () => {
+  saveDocuments()
+  newDocument()
+})
+
+deleteButton.addEventListener('click', () => {
+  deleteDocument()
+})
+
+themeToggleButton.addEventListener('click', () => {
+  if (document.body.classList.contains('dark-theme')) {
+    document.body.classList.remove('dark-theme')
+    themeToggleButton.textContent = '🌔'
+  } else {
+    document.body.classList.add('dark-theme')
+    themeToggleButton.textContent = '🌣'
   }
+})
 
-  function exportDocuments() {
-    const jsonStr = JSON.stringify(savedDocuments)
-    const blob = new Blob([jsonStr], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    exportDocumentsButton.href = url
+exportDocumentsButton.addEventListener('click', () => {
+  saveDocuments()
+  exportDocuments()
+})
+
+textarea.addEventListener('keydown', (event) => {
+  if (event.code === 'Tab') {
+    event.preventDefault()
+    indentSelection()
+  }
+})
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function saveDocuments() {
+  localStorage.setItem(lsEntry, JSON.stringify(documents))
+  savingSpinner.classList.remove('saving')
+  savingSpinner.classList.add('saved')
+}
+
+function updateCurrentDocument() {
+  documents[currentDocName] = textarea.value.split('\n').map((line) => {
+    const match = line.match(/(^\t*)(.*)/)
+    return { value: match[2], tabs: match[1].length }
+  })
+}
+
+function updateTextarea() {
+  textarea.value = documents[currentDocName]
+    .map((line) => '\t'.repeat(line.tabs) + line.value)
+    .join('\n')
+}
+
+function getSavedDocuments() {
+  let documents = {}
+  try {
+    documents = JSON.parse(localStorage.getItem(lsEntry)) || {}
+  } finally {
+    return documents
   }
 }
 
-setup()
+function validName(name) {
+  if (documents[name] != null || !name) return false
+  else return true
+}
+
+function newDocument() {
+  const newDocName = 'New file'
+  if (!validName(newDocName)) {
+    window.alert('Change name to existing new file')
+    return
+  }
+  currentDocName = newDocName
+  textarea.value = ''
+  updateCurrentDocument()
+  addDropdownOption(currentDocName)
+  filenameInput.value = ''
+  filenameInput.disabled = false
+  // filenameInput.focus()
+}
+
+function updateName() {
+  filenameInput.value = currentDocName
+  filenameInput.disabled = true
+}
+
+function addDropdownOption(name) {
+  const newDocEntry = document.createElement('option')
+  newDocEntry.value = name
+  newDocEntry.textContent = name
+  newDocEntry.selected = true
+  savesMenu.prepend(newDocEntry)
+}
+
+function rename() {
+  const newName = filenameInput.value
+
+  documents[newName] = documents[currentDocName]
+  delete documents[currentDocName]
+
+  savesMenu.selectedOptions[0].value = newName
+  savesMenu.selectedOptions[0].textContent = newName
+
+  currentDocName = newName
+}
+
+function deleteDocument() {
+  if (!window.confirm(`Are you sure you want to delelte "${currentDocName}""?`))
+    return
+  delete documents[currentDocName]
+  saveDocuments()
+  savesMenu.selectedOptions[0].remove()
+  if (!savesMenu.selectedOptions[0]) newDocument()
+  else changeDocument(savesMenu.selectedOptions[0].value)
+}
+
+function changeDocument(docName) {
+  currentDocName = docName
+  updateTextarea()
+  updateName()
+}
+
+function exportDocuments() {
+  const jsonStr = JSON.stringify(documents)
+  const blob = new Blob([jsonStr], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  exportDocumentsButton.href = url
+}
+
+// function insertAtStrIdx(src, idx, insertStr) {
+//   return src.slice(0, idx) + insertStr + src.slice(idx)
+// }
+
+function getLineIdx(cursorPos) {
+  const currentDoc = documents[currentDocName]
+  let lineIdx = 0
+  let totLen = currentDoc[lineIdx].value.length + currentDoc[lineIdx].tabs
+  while (cursorPos > totLen) {
+    lineIdx++
+    totLen += currentDoc[lineIdx].value.length + currentDoc[lineIdx].tabs + 1
+  }
+  return lineIdx
+}
+
+function getStartOfLinePos(lineIdx) {
+  const currentDoc = documents[currentDocName]
+  let pos = 0
+  for (let i = 0; i < lineIdx; ++i) {
+    pos += currentDoc[i].value.length + currentDoc[i].tabs + 1
+  }
+  return pos
+}
+
+function getEndOfLinePos(lineIdx) {
+  return getStartOfLinePos(lineIdx + 1) - 1
+}
+
+function indentLine(lineIdx) {
+  ++documents[currentDocName][lineIdx].tabs
+}
+
+function indentSelection() {
+  const startPos = textarea.selectionStart
+  const endPos = textarea.selectionEnd
+  const startIdx = getLineIdx(startPos)
+  const endIdx = getLineIdx(endPos)
+
+  textarea.setSelectionRange(
+    getStartOfLinePos(startIdx),
+    getEndOfLinePos(endIdx)
+  )
+
+  for (let i = startIdx; i <= endIdx; ++i) {
+    indentLine(i)
+  }
+
+  document.execCommand(
+    'insertText',
+    false,
+    documents[currentDocName]
+      .slice(startIdx, endIdx + 1)
+      .map((line) => '\t'.repeat(line.tabs) + line.value)
+      .join('\n')
+  )
+  textarea.setSelectionRange(startPos + 1, endPos + endIdx - startIdx + 1)
+  saveDocuments()
+}
+// }
+
+// setup()

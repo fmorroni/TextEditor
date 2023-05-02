@@ -5,7 +5,7 @@
 }
 
 body {
-  background: white;
+  background: #e9e9e0;
   font-family: Arial, sans-serif;
   width: 100vw;
   height: 100vh;
@@ -29,6 +29,7 @@ body {
   padding: 10px;
   resize: horizontal;
   border-radius: 4px;
+  tab-size: 2;
 }
 
 #toolbar {
