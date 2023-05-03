@@ -134,7 +134,7 @@ body {
 }
 
 .saved::after {
-  content: "✓";
+  content: '✓';
   color: #4caf50;
   font-size: 1.5rem;
 }
