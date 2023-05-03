@@ -1,5 +1,5 @@
 function setup() {
-  const lsEntry = 'my-shitty-text-editor-saves'
+  const lsEntry = 'my-text-editor-saves'
 
   const filenameInput = document.getElementById('filename')
   const renameButton = document.querySelector('.rename-button')
