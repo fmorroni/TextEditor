@@ -15,6 +15,13 @@ const textarea = document.getElementById('editor')
 const themeToggleButton = document.querySelector('.theme-button')
 const exportDocumentsButton = document.querySelector('.export-button')
 
+const modeButton = document.querySelector('.mode-button')
+const Mode = {
+  normie: 'normie-mode',
+  vi: 'vi-mode',
+}
+let mode = Mode.normie
+
 const documents = getSavedDocuments()
 
 let currentDocName = Object.keys(documents)[Object.keys(documents).length - 1] || null
@@ -108,6 +115,24 @@ themeToggleButton.addEventListener('click', () => {
 exportDocumentsButton.addEventListener('click', () => {
   saveDocuments()
   exportDocuments()
+})
+
+const ViMode = {
+  normal: 'vi-normal',
+  insert: 'vi-insert',
+  visual: 'vi-visual',
+}
+let viMode = null
+modeButton.addEventListener('click', () => {
+  if (mode === Mode.normie) {
+    mode = Mode.vi
+    modeButton.textContent = Mode.normie
+    switchViMode(ViMode.normal)
+  } else if (mode === Mode.vi) {
+    mode = Mode.normie
+    modeButton.textContent = Mode.vi
+    switchViMode(null)
+  }
 })
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -269,6 +294,13 @@ function indentSelection(tabCount) {
   )
   textarea.setSelectionRange(startPos + firstLineTabs, endPos + totTabs)
   saveDocuments()
+}
+
+function switchViMode(newViMode) {
+  textarea.classList.remove(ViMode.normal, ViMode.insert, ViMode.visual)
+  viMode = newViMode
+  if (viMode) textarea.classList.add(Mode.vi, viMode)
+  else textarea.classList.remove(Mode.vi)
 }
 
 // }

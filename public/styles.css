@@ -33,6 +33,14 @@ body {
   white-space: nowrap;
 }
 
+#editor.vi-mode.vi-normal {
+  caret-color: magenta;
+}
+
+#editor.vi-mode.vi-insert {
+  caret-color: unset;
+}
+
 #toolbar {
   display: flex;
   width: 100%;
@@ -90,16 +98,23 @@ body {
 
 .newdoc-button,
 .delete-button,
-.export-button {
+.export-button,
+.mode-button {
   color: white;
 }
 
-.export-button {
+.export-button, .mode-button {
   position: absolute;
   bottom: 5px;
   right: 5px;
   background-color: #3f51b5;
   padding: 3px 5px;
+}
+
+.mode-button {
+  right: unset;
+  left: 5px;
+  background-color: #545d5d;
 }
 
 .newdoc-button {
