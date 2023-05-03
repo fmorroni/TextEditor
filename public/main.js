@@ -35,6 +35,7 @@ if (currentDocName) {
 } else {
   newDocument()
 }
+let currentDoc = documents[currentDocName]
 
 filenameInput.addEventListener('keyup', (event) => {
   if (event.code === 'Enter') {
@@ -76,21 +77,55 @@ textarea.addEventListener('input', () => {
   savingSpinner.classList.add('saving')
 })
 
+let motionCount = 1
 textarea.addEventListener('keydown', (event) => {
-  if (event.code === 'Tab') {
-    event.preventDefault()
-    event.shiftKey ? indentSelection(-1) : indentSelection(1)
-  } else if (event.code === 'Enter') {
-    event.preventDefault()
-    document.execCommand('insertText', false, '\n')
-    const lineIdx = getLineIdx(textarea.selectionStart)
-    documents[currentDocName][lineIdx].tabs = documents[currentDocName][lineIdx - 1].tabs
-    document.execCommand(
-      'insertText',
-      false,
-      '\t'.repeat(documents[currentDocName][lineIdx - 1].tabs)
-    )
+  let preventDefault = true
+  if (mode === Mode.normie || viMode === ViMode.insert) {
+    switch (event.key) {
+      case 'Tab':
+        event.shiftKey ? indentSelection(-1) : indentSelection(1)
+        break
+      case 'Enter':
+        document.execCommand('insertText', false, '\n')
+        const lineIdx = getLineIdx(textarea.selectionStart)
+        currentDoc[lineIdx].tabs = currentDoc[lineIdx - 1].tabs
+        document.execCommand('insertText', false, '\t'.repeat(currentDoc[lineIdx - 1].tabs))
+        break
+      case 'Escape':
+        switchViMode(ViMode.normal)
+        break
+      default:
+        preventDefault = false
+        break
+    }
+  } else if (mode === Mode.vi && (viMode === ViMode.normal || viMode === ViMode.visual)) {
+    switch (event.key) {
+      case 'l':
+        moveCursorHorizontal(motionCount)
+        break
+      case 'h':
+        moveCursorHorizontal(-motionCount)
+        break
+      case 'j':
+        moveCursorVertical(motionCount)
+        break
+      case 'k':
+        moveCursorVertical(-motionCount)
+        break
+      case 'n':
+        switchViMode(ViMode.normal)
+        break
+      case 'v':
+        switchViMode(ViMode.visual)
+        break
+      case 'i':
+        switchViMode(ViMode.insert)
+        break
+    }
+    motionCount = parseInt(event.key) || 1
   }
+
+  if (preventDefault) event.preventDefault()
 })
 
 newDocButton.addEventListener('click', () => {
@@ -133,7 +168,10 @@ modeButton.addEventListener('click', () => {
     modeButton.textContent = Mode.vi
     switchViMode(null)
   }
+  textarea.focus()
 })
+
+modeButton.click()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -148,6 +186,7 @@ function updateCurrentDocument() {
     const match = line.match(/(^\t*)(.*)/)
     return { value: match[2], tabs: match[1].length }
   })
+  currentDoc = documents[currentDocName]
 }
 
 function updateTextarea() {
@@ -201,7 +240,7 @@ function addDropdownOption(name) {
 function rename() {
   const newName = filenameInput.value
 
-  documents[newName] = documents[currentDocName]
+  documents[newName] = currentDoc
   delete documents[currentDocName]
 
   savesMenu.selectedOptions[0].value = newName
@@ -237,7 +276,6 @@ function exportDocuments() {
 // }
 
 function getLineIdx(cursorPos) {
-  const currentDoc = documents[currentDocName]
   let lineIdx = 0
   let totLen = currentDoc[lineIdx].value.length + currentDoc[lineIdx].tabs
   while (cursorPos > totLen) {
@@ -248,7 +286,6 @@ function getLineIdx(cursorPos) {
 }
 
 function getStartOfLinePos(lineIdx) {
-  const currentDoc = documents[currentDocName]
   let pos = 0
   for (let i = 0; i < lineIdx; ++i) {
     pos += currentDoc[i].value.length + currentDoc[i].tabs + 1
@@ -261,7 +298,7 @@ function getEndOfLinePos(lineIdx) {
 }
 
 function indentLine(lineIdx, tabCount) {
-  const line = documents[currentDocName][lineIdx]
+  const line = currentDoc[lineIdx]
   line.tabs += tabCount
   if (line.tabs < 0) {
     tabCount -= line.tabs
@@ -273,22 +310,22 @@ function indentLine(lineIdx, tabCount) {
 function indentSelection(tabCount) {
   const startPos = textarea.selectionStart
   const endPos = textarea.selectionEnd
-  const startIdx = getLineIdx(startPos)
-  const endIdx = getLineIdx(endPos)
+  const startLineIdx = getLineIdx(startPos)
+  const endLineIdx = getLineIdx(endPos)
 
-  textarea.setSelectionRange(getStartOfLinePos(startIdx), getEndOfLinePos(endIdx))
+  textarea.setSelectionRange(getStartOfLinePos(startLineIdx), getEndOfLinePos(endLineIdx))
 
-  let firstLineTabs = indentLine(startIdx, tabCount)
+  let firstLineTabs = indentLine(startLineIdx, tabCount)
   let totTabs = firstLineTabs
-  for (let i = startIdx + 1; i <= endIdx; ++i) {
+  for (let i = startLineIdx + 1; i <= endLineIdx; ++i) {
     totTabs += indentLine(i, tabCount)
   }
 
   document.execCommand(
     'insertText',
     false,
-    documents[currentDocName]
-      .slice(startIdx, endIdx + 1)
+    currentDoc
+      .slice(startLineIdx, endLineIdx + 1)
       .map((line) => '\t'.repeat(line.tabs) + line.value)
       .join('\n')
   )
@@ -301,6 +338,33 @@ function switchViMode(newViMode) {
   viMode = newViMode
   if (viMode) textarea.classList.add(Mode.vi, viMode)
   else textarea.classList.remove(Mode.vi)
+}
+
+function moveCursorHorizontal(count) {
+  if (viMode === ViMode.normal) {
+    textarea.selectionStart += count
+    textarea.selectionEnd = textarea.selectionStart
+  } else if (viMode === ViMode.visual) {
+    textarea.selectionEnd += count
+  }
+}
+
+function moveCursorVertical(count) {
+  const cursorPos = count > 0 ? textarea.selectionEnd : textarea.selectionStart
+  const startLineIdx = getLineIdx(cursorPos)
+  const startLinePos = getStartOfLinePos(startLineIdx)
+  const newPos = getStartOfLinePos(startLineIdx + count) + cursorPos - startLinePos
+
+  if (viMode === ViMode.normal) {
+    textarea.selectionStart = newPos
+    textarea.selectionEnd = textarea.selectionStart
+  } else if (viMode === ViMode.visual) {
+    if (count > 0) {
+      textarea.selectionEnd = newPos
+    } else {
+      textarea.selectionStart = newPos
+    }
+  }
 }
 
 // }
