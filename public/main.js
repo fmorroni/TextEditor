@@ -17,8 +17,7 @@ const exportDocumentsButton = document.querySelector('.export-button')
 
 const documents = getSavedDocuments()
 
-let currentDocName =
-  Object.keys(documents)[Object.keys(documents).length - 1] || null
+let currentDocName = Object.keys(documents)[Object.keys(documents).length - 1] || null
 if (currentDocName) {
   filenameInput.disabled = true
   changeDocument(currentDocName)
@@ -30,7 +29,7 @@ if (currentDocName) {
   newDocument()
 }
 
-filenameInput.addEventListener('keyup', function(event) {
+filenameInput.addEventListener('keyup', (event) => {
   if (event.code === 'Enter') {
     textarea.focus()
   }
@@ -86,7 +85,6 @@ textarea.addEventListener('keydown', (event) => {
     )
   }
 })
-
 
 newDocButton.addEventListener('click', () => {
   saveDocuments()
@@ -188,8 +186,7 @@ function rename() {
 }
 
 function deleteDocument() {
-  if (!window.confirm(`Are you sure you want to delelte "${currentDocName}""?`))
-    return
+  if (!window.confirm(`Are you sure you want to delelte "${currentDocName}""?`)) return
   delete documents[currentDocName]
   saveDocuments()
   savesMenu.selectedOptions[0].remove()
@@ -254,12 +251,10 @@ function indentSelection(tabCount) {
   const startIdx = getLineIdx(startPos)
   const endIdx = getLineIdx(endPos)
 
-  textarea.setSelectionRange(
-    getStartOfLinePos(startIdx),
-    getEndOfLinePos(endIdx)
-  )
+  textarea.setSelectionRange(getStartOfLinePos(startIdx), getEndOfLinePos(endIdx))
 
-  let firstLineTabs = indentLine(startIdx,tabCount), totTabs = firstLineTabs
+  let firstLineTabs = indentLine(startIdx, tabCount)
+  let totTabs = firstLineTabs
   for (let i = startIdx + 1; i <= endIdx; ++i) {
     totTabs += indentLine(i, tabCount)
   }
