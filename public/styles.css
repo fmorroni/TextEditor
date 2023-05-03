@@ -29,7 +29,7 @@ body {
   padding: 10px;
   resize: horizontal;
   border-radius: 4px;
-  tab-size: 2;
+  tab-size: 1;
   white-space: nowrap;
 }
 
