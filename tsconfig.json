@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "target": "ES2020",
+    "sourceMap": true,
+    "outDir": "dist",
+    "watch": true,
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "*": ["./src/types/*.d.ts"]
+    }
+  },
+  "include": ["src/**/*"]
+}
