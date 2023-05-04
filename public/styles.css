@@ -58,6 +58,19 @@ body {
   text-align: center;
 }
 
+#command-line, #command-visualizer {
+  padding: 5px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  height: 100%;
+  width: 100%;
+}
+
+#command-visualizer {
+  width: 6rem;
+}
+
 .buttons-container {
   display: flex;
   gap: 0.5rem;
@@ -67,6 +80,15 @@ body {
   display: flex;
   gap: 0.3rem;
   align-items: center;
+}
+
+.command-container {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+  width: 100%;
+  margin-top: 10px;
+  height: 30px;
 }
 
 .button {
@@ -103,7 +125,8 @@ body {
   color: white;
 }
 
-.export-button, .mode-button {
+.export-button,
+.mode-button {
   position: absolute;
   bottom: 5px;
   right: 5px;
