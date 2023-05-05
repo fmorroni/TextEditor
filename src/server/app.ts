@@ -7,6 +7,8 @@ app.listen(5000, () => {
 })
 
 app.use(express.static('dist/public'))
+app.use(express.static('dist/root'))
 
 // For debuging
 app.use('/src/public/', express.static('src/public'))
+
