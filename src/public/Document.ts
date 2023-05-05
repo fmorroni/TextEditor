@@ -1,12 +1,26 @@
 export default class MyDocument {
+  name: string
   lines: Line[]
 
-  constructor() {
+  constructor(name: string) {
+    this.name = name
     this.lines = []
   }
 
-  get length() {
+  get rows() {
     return this.lines.length
+  }
+
+  cols(row: number) {
+    return this.lines[row].length
+  }
+
+  get length(): number {
+    return this.lines.reduce((acc, line) => acc + line.length, 0)
+  }
+
+  get text(): string {
+    return this.lines.join('\n')
   }
 
   absolutePos(row: number, col: number): number {
@@ -15,6 +29,10 @@ export default class MyDocument {
       tot += this.lines[r].length
     }
     return tot + col
+  }
+
+  addLine(text: string, tabs: number = 0) {
+    this.lines.push(new Line(text, tabs))
   }
 }
 
@@ -50,4 +68,3 @@ class Line {
     return ' '.repeat(this.tabLength) + this.text
   }
 }
-
