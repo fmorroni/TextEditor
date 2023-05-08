@@ -21,7 +21,7 @@ body {
   align-items: center;
 }
 
-#editor {
+.editor {
   height: 80vh;
   width: 100%;
   margin-top: 1rem;
@@ -31,6 +31,11 @@ body {
   border-radius: 4px;
   tab-size: 1;
   white-space: nowrap;
+  display: none;
+}
+
+.editor.active {
+  display: unset;
 }
 
 #editor.vi-mode.vi-normal {
@@ -56,6 +61,35 @@ body {
   border: 1px solid #ccc;
   border-radius: 4px;
   text-align: center;
+}
+
+#filename.invalid {
+  border: 2px solid #dc3545;
+  animation: shake 0.5s;
+}
+
+@keyframes shake {
+  0% {
+    transform: translateX(0);
+  }
+  17% {
+    transform: translateX(5px);
+  }
+  33% {
+    transform: translateX(-5px);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+  67% {
+    transform: translateX(-5px);
+  }
+  83% {
+    transform: translateX(5px);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 
 .buttons-container {
@@ -103,7 +137,8 @@ body {
   color: white;
 }
 
-.export-button, .mode-button {
+.export-button,
+.mode-button {
   position: absolute;
   bottom: 5px;
   right: 5px;

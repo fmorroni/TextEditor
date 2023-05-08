@@ -1,10 +1,26 @@
+import { SaveFile } from './TextEditor.js'
+
 export default class MyDocument {
   name: string
   lines: Line[]
+  undoHistory: History
+  redoHistory: History
 
-  constructor(name: string) {
-    this.name = name
-    this.lines = []
+  constructor(name: string)
+  constructor(saveFile: SaveFile)
+  constructor(nameOrSaveFile: string | SaveFile) {
+    if (typeof nameOrSaveFile === 'string') {
+      this.name = nameOrSaveFile 
+      this.lines = []
+      this.undoHistory = []
+      this.redoHistory = []
+    } else {
+      const saveFile = nameOrSaveFile
+      this.name = saveFile.name
+      this.lines = saveFile.lines.map(line => new Line(line.text, line._tabs))
+      this.undoHistory = saveFile.undoHistory
+      this.redoHistory = saveFile.redoHistory
+    }
   }
 
   get rows() {
@@ -34,9 +50,33 @@ export default class MyDocument {
   addLine(text: string, tabs: number = 0) {
     this.lines.push(new Line(text, tabs))
   }
+
+  private prevState(from: History, to: History) {
+    if (!from.length) return false
+    const prevState = from.pop()
+    const currentState: DocumentSate = []
+    for (const entry of prevState) {
+      currentState.push({ row: entry.row, line: this.lines[entry.row] })
+      this.lines[entry.row] = entry.line
+    }
+    to.push(currentState)
+    return true
+  }
+
+  undo() {
+    return this.prevState(this.undoHistory, this.redoHistory)
+  }
+
+  redo() {
+    return this.prevState(this.redoHistory, this.undoHistory)
+  }
+
+  resetRedoHistory() {
+    this.redoHistory.length = 0
+  }
 }
 
-class Line {
+export class Line {
   static tabLenght: number = 2
   text: string
   private _tabs: number
@@ -68,3 +108,7 @@ class Line {
     return ' '.repeat(this.tabLength) + this.text
   }
 }
+
+type DocumentSate = { row: number; line: Line }[]
+export type History = DocumentSate[]
+// Prolly better to make it a class and redefine push so that there is a max amount of saved states.

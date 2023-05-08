@@ -10,7 +10,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "*": ["./src/types/*.d.ts"]
-    }
+    },
+    "noImplicitAny": true
   },
   "include": ["src/**/*"]
 }
