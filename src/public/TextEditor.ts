@@ -8,12 +8,12 @@ export default class TextEditor {
   /* private  */ exportDocumentsButton: HTMLButtonElement
   /* private  */ themeToggleButton: HTMLButtonElement
   /* private  */ renameButton: HTMLButtonElement
-  /* private  */ newDocButton: HTMLButtonElement
-  /* private  */ deleteButton: HTMLButtonElement
+  /* private  */ newDocButton: Button
+  /* private  */ deleteButton: Button
   /* private  */ modeButton: HTMLButtonElement
 
-  /* private  */ filenameInput: HTMLInputElement
-  /* private  */ docsDropdown: HTMLSelectElement
+  /* private  */ filenameInput: FilenameInput
+  /* private  */ docsDropdown: DropdownElement
   /* private  */ savingSpinner: HTMLDivElement
 
   cursor: Cursor
@@ -28,31 +28,77 @@ export default class TextEditor {
     this.exportDocumentsButton = args.exportDocumentsButton
     this.themeToggleButton = args.themeToggleButton
     this.renameButton = args.renameButton
-    this.newDocButton = args.newDocButton
-    this.deleteButton = args.deleteButton
+    this.newDocButton = setDisableable(args.newDocButton as Button)
+    this.deleteButton = setDisableable(args.deleteButton as Button)
     this.modeButton = args.modeButton
 
-    this.filenameInput = args.filenameInput
-    this.docsDropdown = args.docsDropdown
+    this.filenameInput = setDisableable(args.filenameInput as FilenameInput)
+
+    this.docsDropdown = setDisableable(args.docsDropdown as DropdownElement)
+
     this.savingSpinner = args.savingSpinner
 
     this.cursor = new Cursor()
-    const saveFiles: [string, SaveFile][] = JSON.parse(localStorage.getItem(args.localStorageKey))
-    this.documents = new Map(saveFiles.map(([name, saveFile]) => [name, new MyDocument(saveFile)]))
-    this.currentDoc = this.documents.values().next().value
-    if (!this.currentDoc) this.newDocument()
-    else {
-      for (const doc of this.documents.values()) {
-         this.addFileToDropdown(doc.name)
-      }
-      this.setFilenameInput(this.currentDoc.name)
-      this.write()
-    }
 
     // Set to the one I you want the initial mode to be.
     this.setMode(Mode.normal)
 
-    this.filenameInput.addEventListener('blur', (event) => {})
+    this.filenameInput.addEventListener('keyup', (event) => {
+      if (event.key === 'Enter' || event.key === 'Tab') {
+        this.textarea.focus()
+      }
+    })
+    this.filenameInput.addEventListener('blur', () => {
+      this.filenameInput.classList.remove(CSS.invalid)
+      if (!this.validName(this.filenameInput.value)) {
+        // Didn't work without a timeout for some reason.
+        setTimeout(() => {
+          this.filenameInput.classList.add(CSS.invalid)
+        }, 100)
+        this.filenameInput.focus()
+      } else {
+        this.rename(this.filenameInput.value)
+        this.filenameInput.disable()
+        this.textarea.focus()
+        this.docsDropdown.enable()
+        this.newDocButton.enable()
+        this.deleteButton.enable()
+      }
+    })
+    this.filenameInput.addEventListener('input', () => {
+      this.filenameInput.classList.remove(CSS.invalid)
+    })
+    this.filenameInput.addEventListener('focus', () => {
+      this.docsDropdown.disable()
+      this.newDocButton.disable()
+      this.deleteButton.disable()
+    })
+
+    this.newDocButton.addEventListener('click', () => {
+      this.write('')
+      this.initializeDoc()
+      this.filenameInput.enable()
+      this.filenameInput.focus()
+    })
+    this.renameButton.addEventListener('click', () => {
+      this.filenameInput.enable()
+      this.filenameInput.focus()
+    })
+
+
+    const saveFiles: [string, SaveFile][] = JSON.parse(localStorage.getItem(args.localStorageKey))
+    this.documents = new Map(saveFiles?.map(([name, saveFile]) => [name, new MyDocument(saveFile)]))
+    this.currentDoc = this.documents.values().next().value
+    if (!this.currentDoc) {
+      this.initializeDoc()
+      this.renameButton.click()
+    } else {
+      for (const doc of this.documents.values()) {
+        this.addFileToDropdown(doc.name)
+      }
+      this.setFilenameInput(this.currentDoc.name)
+      this.writeCurrentDoc()
+    }
   }
 
   setMode(mode: Mode) {
@@ -65,13 +111,13 @@ export default class TextEditor {
     this.textarea.focus()
   }
 
-  private initializeCaret() {
-    if (this.cursor.selectionDir === SelectionDirection.Forward) {
-      this.textarea.selectionEnd = this.currentDoc.absolutePos(row, col) | 0
-    } else if (this.cursor.selectionDir === SelectionDirection.Backward) {
-      this.textarea.selectionStart = this.currentDoc.absolutePos(row, col) | 0
-    }
-  }
+  // private initializeCaret() {
+  //   if (this.cursor.selectionDir === SelectionDirection.Forward) {
+  //     this.textarea.selectionEnd = this.currentDoc.absolutePos(row, col) | 0
+  //   } else if (this.cursor.selectionDir === SelectionDirection.Backward) {
+  //     this.textarea.selectionStart = this.currentDoc.absolutePos(row, col) | 0
+  //   }
+  // }
 
   moveCursorTail(row: number, col: number) {
     if (row < 0) row = 0
@@ -87,17 +133,37 @@ export default class TextEditor {
     }
   }
 
-  editFileName(event: InputEvent) {}
+  private validName(name: string): boolean {
+    return name.length > 0 && !this.documents.has(name)
+  }
 
-  newDocument(name: string): boolean {
-    // if (this.documents.has(name)) return false
+  rename(newName: string) {
+    if (!this.validName(newName)) return false
+    // const newName = this.filenameInput.value
+
+    this.documents.delete(this.currentDoc.name)
+    this.currentDoc.name = newName
+    this.documents.set(newName, this.currentDoc)
+
+    this.docsDropdown.selectedOptions[0].value = newName
+    this.docsDropdown.selectedOptions[0].textContent = newName
+    this.filenameInput.value = newName
+  }
+
+  private newDocUnverified(name: string) {
     this.currentDoc = new MyDocument(name)
     this.documents.set(name, this.currentDoc)
-    // this.setFilenameInput(name)
-    // this.addFileToDropdown(name)
+    this.setFilenameInput(name)
+    this.addFileToDropdown(name)
+  }
 
-    this.filenameInput.focus()
+  initializeDoc() {
+    this.newDocUnverified('')
+  }
 
+  newDocument(name: string): boolean {
+    if (!this.validName(name)) return false
+    this.newDocUnverified(name)
     return true
   }
 
@@ -113,10 +179,14 @@ export default class TextEditor {
     this.docsDropdown.prepend(newDocEntry)
   }
 
-  write() {
+  write(text: string) {
     for (const ta of this.textareaMode.values()) {
-      ta.value = this.currentDoc.text
+      ta.value = text
     }
+  }
+
+  writeCurrentDoc() {
+    this.write(this.currentDoc.text)
   }
 
   saveToLocalStorage() {
@@ -205,6 +275,7 @@ type TextareaMode = {
 
 enum CSS {
   active = 'active',
+  invalid = 'invalid',
 }
 
 export interface SaveFile {
@@ -216,6 +287,21 @@ export interface SaveFile {
 interface Line {
   text: string
   _tabs: number
+}
+
+interface Disableable {
+  disable(): void
+  enable(): void
+  disabled: boolean
+}
+interface FilenameInput extends HTMLInputElement, Disableable {}
+type DropdownElement = HTMLSelectElement & Disableable
+interface Button extends HTMLButtonElement, Disableable {}
+
+function setDisableable<T extends Disableable>(obj: T) {
+  obj.disable = () => (obj.disabled = true)
+  obj.enable = () => (obj.disabled = false)
+  return obj
 }
 
 // enum ViMode {

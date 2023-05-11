@@ -64,7 +64,8 @@ body {
 }
 
 #filename.invalid {
-  border: 2px solid #dc3545;
+  outline: 2px solid #dc3545;
+  border: none;
   animation: shake 0.5s;
 }
 
