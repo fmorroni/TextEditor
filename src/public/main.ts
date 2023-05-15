@@ -1,21 +1,21 @@
 import TextEditor from './TextEditor.js'
 
 const editor = new TextEditor({
-  textareaMode: {
-    normie: document.getElementById('normie') as HTMLTextAreaElement,
-    normal: document.getElementById('normal') as HTMLTextAreaElement,
-    insert: document.getElementById('insert') as HTMLTextAreaElement,
-    visual: document.getElementById('visual') as HTMLTextAreaElement,
+  textareas: {
+    [Modes.normie]: document.getElementById('normie') as HTMLTextAreaElement,
+    [Modes.normal]: document.getElementById('normal') as HTMLTextAreaElement,
+    [Modes.insert]: document.getElementById('insert') as HTMLTextAreaElement,
+    [Modes.visual]: document.getElementById('visual') as HTMLTextAreaElement,
   },
-  localStorageKey: 'my-shitty-text-editor-saves',
+  localStorageKey: 'my-text-editor-saves',
   filenameInput: document.getElementById('filename') as HTMLInputElement,
-  exportDocumentsButton: document.querySelector('.export-button') as HTMLButtonElement,
-  renameButton: document.querySelector('.rename-button') as HTMLButtonElement,
-  newDocButton: document.querySelector('.newdoc-button') as HTMLButtonElement,
-  deleteButton: document.querySelector('.delete-button') as HTMLButtonElement,
-  themeToggleButton: document.querySelector('.theme-button') as HTMLButtonElement,
-  modeButton: document.querySelector('.mode-button') as HTMLButtonElement,
-  docsDropdown: document.querySelector('.saves-menu') as HTMLSelectElement,
+  exportDocumentsButton: document.querySelector('.export-button'),
+  renameButton: document.querySelector('.rename-button'),
+  newDocButton: document.querySelector('.newdoc-button'),
+  deleteButton: document.querySelector('.delete-button'),
+  themeToggleButton: document.querySelector('.theme-button'),
+  modeButton: document.querySelector('.mode-button'),
+  docsDropdown: document.querySelector('.saves-menu'),
   savingSpinner: document.getElementById('saving-spinner') as HTMLDivElement,
 })
 

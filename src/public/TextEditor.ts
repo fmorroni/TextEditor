@@ -1,29 +1,33 @@
-import MyDocument, { History } from './Document.js'
+import MyDocument from './Document.js'
+import Mode from './modes/Mode.js'
 
 export default class TextEditor {
-  /* private  */ textareaMode: Map<Mode, HTMLTextAreaElement>
-  /* private  */ textarea: HTMLTextAreaElement
-  /* private  */ localStorageKey: string
+  // textareaMode: Map<Modes, HTMLTextAreaElement>
+  modes: Map<Modes, Mode>
+  currentMode: Mode
+  textarea: HTMLTextAreaElement
+  localStorageKey: string
 
-  /* private  */ exportDocumentsButton: HTMLButtonElement
-  /* private  */ themeToggleButton: HTMLButtonElement
-  /* private  */ renameButton: HTMLButtonElement
-  /* private  */ newDocButton: Button
-  /* private  */ deleteButton: Button
-  /* private  */ modeButton: HTMLButtonElement
+  exportDocumentsButton: HTMLButtonElement
+  themeToggleButton: HTMLButtonElement
+  renameButton: HTMLButtonElement
+  newDocButton: Button
+  deleteButton: Button
+  modeButton: HTMLButtonElement
 
-  /* private  */ filenameInput: FilenameInput
-  /* private  */ docsDropdown: DropdownElement
-  /* private  */ savingSpinner: HTMLDivElement
+  filenameInput: FilenameInput
+  docsDropdown: DropdownElement
+  savingSpinner: HTMLDivElement
 
   cursor: Cursor
   documents: Map<string, MyDocument>
-  /* private  */ currentDoc: MyDocument
-  mode: Mode
+  currentDoc: MyDocument
 
   constructor(args: EditorConstructor) {
-    this.textareaMode = new Map(Object.entries(args.textareaMode) as [Mode, HTMLTextAreaElement][])
-    this.localStorageKey = args.localStorageKey
+    // this.textareaMode = new Map(Object.entries(args.textareaMode) as [Modes, HTMLTextAreaElement][])
+    // this.localStorageKey = args.localStorageKey
+    
+    this.modes = new Map(Object.entries(args.textareas).map(([mode, textarea]) => [mode as Modes, new Mode(textarea)]))
 
     this.exportDocumentsButton = args.exportDocumentsButton
     this.themeToggleButton = args.themeToggleButton
@@ -41,7 +45,7 @@ export default class TextEditor {
     this.cursor = new Cursor()
 
     // Set to the one I you want the initial mode to be.
-    this.setMode(Mode.normal)
+    this.setMode(Modes.normal)
 
     this.filenameInput.addEventListener('keyup', (event) => {
       if (event.key === 'Enter' || event.key === 'Tab') {
@@ -101,12 +105,9 @@ export default class TextEditor {
     }
   }
 
-  setMode(mode: Mode) {
-    this.textarea = this.textareaMode.get(mode)
-    this.mode = mode
-    for (const ta of this.textareaMode.values()) {
-      ta.classList.remove(CSS.active)
-    }
+  setMode(mode: Modes) {
+    this.textarea = this.modes.get(mode).textarea
+    this.modes.forEach(mode => mode.textarea.classList.remove(CSS.active))
     this.textarea.classList.add(CSS.active)
     this.textarea.focus()
   }
@@ -180,9 +181,7 @@ export default class TextEditor {
   }
 
   write(text: string) {
-    for (const ta of this.textareaMode.values()) {
-      ta.value = text
-    }
+    this.modes.forEach(mode => mode.textarea.value = text)
   }
 
   writeCurrentDoc() {
@@ -249,7 +248,7 @@ namespace SelectionDirection {
 }
 
 interface EditorConstructor {
-  textareaMode: TextareaMode
+  textareas: TextareaMode
   localStorageKey: string
   filenameInput: HTMLInputElement
   renameButton: HTMLButtonElement
@@ -262,32 +261,10 @@ interface EditorConstructor {
   savingSpinner: HTMLDivElement
 }
 
-enum Mode {
-  normie = 'normie',
-  normal = 'normal',
-  insert = 'insert',
-  visual = 'visual',
-}
-
-type TextareaMode = {
-  [M in Mode]: HTMLTextAreaElement
-}
-
-enum CSS {
-  active = 'active',
-  invalid = 'invalid',
-}
-
-export interface SaveFile {
-  name: string
-  lines: Line[]
-  undoHistory: History
-  redoHistory: History
-}
-interface Line {
-  text: string
-  _tabs: number
-}
+type TextareaMode = Record<Modes, HTMLTextAreaElement>
+// type TextareaMode = {
+//   [M in Modes]: HTMLTextAreaElement
+// }
 
 interface Disableable {
   disable(): void

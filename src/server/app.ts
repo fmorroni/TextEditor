@@ -13,4 +13,5 @@ app.use(express.static('dist/css'))
 // For debuging
 app.use('/src/public/', express.static('src/public'))
 app.use('/src/public/modes', express.static('src/public/modes'))
+app.use('/src/types/', express.static('src/types'))
 

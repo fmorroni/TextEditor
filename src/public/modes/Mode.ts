@@ -1,6 +1,6 @@
-class Mode {
+export default class Mode {
   textarea: HTMLTextAreaElement
-  keymaps: Map<string, MotionedKeymap | UnmotionedKeymap>
+  keymaps: Map<string, Keymap>
 
   constructor(textarea: HTMLTextAreaElement) {
     this.textarea = textarea
@@ -11,11 +11,7 @@ class Mode {
     this.keymaps.set(key, keymap)
   }
 
-  getKeymap(key: string): Keymap {
-    return this.keymaps.get(key)
-  }
-
-  execKeymap(key: string, motionCount: string): boolean {
+  execKeymap(key: string, motionCount: number): boolean {
     const km = this.keymaps.get(key)
     if (!km) return false
     km(motionCount)
@@ -23,13 +19,16 @@ class Mode {
   }
 }
 
-type MotionedKeymap = (motionCount: number) => void
-type UnmotionedKeymap = (a: string) => void
-type Keymap = MotionedKeymap | UnmotionedKeymap
+// class Keymap {
+//   protected handler: KeymapHandler
 
+//   constructor(handler: KeymapHandler) {
+//     this.handler = handler
+//   }
 
-function keymapType(k: UnmotionedKeymap): string
-function keymapType(k: MotionedKeymap): string
-function keymapType(k: MotionedKeymap | UnmotionedKeymap): string {
+//   exec(motionCount: number) {
+//     this.handler(motionCount)
+//   }
+// }
 
-}
+type Keymap = (motionCount: number) => void
