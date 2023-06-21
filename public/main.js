@@ -1,5 +1,5 @@
 function setup() {
-  const lsEntry = 'my-text-editor-saves'
+  const lsStorageKey = 'storage'
 
   const filenameInput = document.getElementById('filename')
   const renameButton = document.querySelector('.rename-button')
@@ -29,6 +29,33 @@ function setup() {
     newDocument()
   }
 
+  // This keeps tab instances syncronized
+  const docModChannel = new BroadcastChannel('tab-modification-channel')
+  docModChannel.addEventListener('message', (event) => {
+    console.log(event.data)
+    const otherTabData = event.data
+    if (!documents[otherTabData.name]) {
+      addDropdownOption(otherTabData.name, false)
+    }
+    documents[otherTabData.name] = otherTabData.lines
+    if (otherTabData.name === currentDocName) {
+      updateTextarea()
+    }
+  })
+  const docRenameChannel = new BroadcastChannel('tab-rename-channel')
+  docRenameChannel.addEventListener('message', (event) => {
+    console.log(event.data)
+    const { oldName, newName } = event.data
+    if (oldName === currentDocName) filenameInput.value = newName
+    renameDocTo(oldName, newName)
+  })
+  const docDeleteChannel = new BroadcastChannel('tab-delete-channel')
+  docDeleteChannel.addEventListener('message', (event) => {
+    console.log(event.data)
+    const { deletedDocName } = event.data
+    deleteDocument(deletedDocName)
+  })
+
   filenameInput.addEventListener('keyup', (event) => {
     if (event.code === 'Enter') {
       textarea.focus()
@@ -37,13 +64,13 @@ function setup() {
 
   filenameInput.addEventListener('blur', () => {
     if (filenameInput.value !== currentDocName) {
+      filenameInput.value = uniqueName(filenameInput.value)
       if (!validName(filenameInput.value)) {
         window.alert('File name invalid')
         return
       }
 
-      rename()
-      saveDocuments()
+      renameCurrentDocTo(filenameInput.value)
     }
     filenameInput.disabled = true
   })
@@ -92,7 +119,7 @@ function setup() {
   })
 
   deleteButton.addEventListener('click', () => {
-    deleteDocument()
+    deleteCurrentDocument()
   })
 
   themeToggleButton.addEventListener('click', () => {
@@ -112,8 +139,14 @@ function setup() {
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  function saveDocuments() {
-    localStorage.setItem(lsEntry, JSON.stringify(documents))
+  function saveDocuments(
+    tabChannel = docModChannel,
+    data = { name: currentDocName, lines: documents[currentDocName] }
+  ) {
+    // Send the document modifications through the tab-communications-channel so that other tabs can update the changes.
+    tabChannel.postMessage(data)
+
+    localStorage.setItem(lsStorageKey, JSON.stringify(documents))
     savingSpinner.classList.remove('saving')
     savingSpinner.classList.add('saved')
   }
@@ -132,12 +165,8 @@ function setup() {
   }
 
   function getSavedDocuments() {
-    let documents = {}
-    try {
-      documents = JSON.parse(localStorage.getItem(lsEntry)) || {}
-    } finally {
-      return documents
-    }
+    const storage = JSON.parse(localStorage.getItem(lsStorageKey)) || {}
+    return storage
   }
 
   function validName(name) {
@@ -145,8 +174,17 @@ function setup() {
     else return true
   }
 
+  function uniqueName(name) {
+    let newName = name,
+      i = 1
+    while (documents[newName] != null) {
+      newName = `${name}(${i++})`
+    }
+    return newName
+  }
+
   function newDocument() {
-    const newDocName = 'New file'
+    const newDocName = uniqueName('New file')
     if (!validName(newDocName)) {
       window.alert('Change name to existing new file')
       return
@@ -165,33 +203,48 @@ function setup() {
     filenameInput.disabled = true
   }
 
-  function addDropdownOption(name) {
+  function addDropdownOption(name, selected = true) {
     const newDocEntry = document.createElement('option')
     newDocEntry.value = name
     newDocEntry.textContent = name
-    newDocEntry.selected = true
+    newDocEntry.selected = selected
     savesMenu.prepend(newDocEntry)
   }
 
-  function rename() {
-    const newName = filenameInput.value
-
-    documents[newName] = documents[currentDocName]
-    delete documents[currentDocName]
-
-    savesMenu.selectedOptions[0].value = newName
-    savesMenu.selectedOptions[0].textContent = newName
-
-    currentDocName = newName
+  function selectDropdownOption(name) {
+    return savesMenu.querySelector(`option[value="${name}"]`)
   }
 
-  function deleteDocument() {
+  function renameDocTo(docName, newName) {
+    documents[newName] = documents[docName]
+    delete documents[docName]
+
+    const option = selectDropdownOption(docName)
+    option.value = newName
+    option.textContent = newName
+    if (docName === currentDocName) currentDocName = newName
+  }
+
+  function renameCurrentDocTo(newName) {
+    const tabData = { oldName: currentDocName, newName: newName }
+    renameDocTo(currentDocName, newName)
+    saveDocuments(docRenameChannel, tabData)
+  }
+
+  function deleteDocument(docName) {
+    delete documents[docName]
+    selectDropdownOption(docName).remove()
+    if (docName === currentDocName) {
+      if (!savesMenu.selectedOptions[0]) newDocument()
+      else changeDocument(savesMenu.selectedOptions[0].value)
+    }
+  }
+
+  function deleteCurrentDocument() {
     if (!window.confirm(`Are you sure you want to delelte "${currentDocName}""?`)) return
-    delete documents[currentDocName]
-    saveDocuments()
-    savesMenu.selectedOptions[0].remove()
-    if (!savesMenu.selectedOptions[0]) newDocument()
-    else changeDocument(savesMenu.selectedOptions[0].value)
+    const tabData = { deletedDocName: currentDocName }
+    deleteDocument(currentDocName)
+    saveDocuments(docDeleteChannel, tabData)
   }
 
   function changeDocument(docName) {
@@ -268,7 +321,6 @@ function setup() {
         .join('\n')
     )
     textarea.setSelectionRange(startPos + firstLineTabs, endPos + totTabs)
-    saveDocuments()
   }
 }
 
