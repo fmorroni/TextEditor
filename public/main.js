@@ -32,7 +32,6 @@ function setup() {
   // This keeps tab instances syncronized
   const docModChannel = new BroadcastChannel('tab-modification-channel')
   docModChannel.addEventListener('message', (event) => {
-    console.log(event.data)
     const otherTabData = event.data
     if (!documents[otherTabData.name]) {
       addDropdownOption(otherTabData.name, false)
@@ -44,14 +43,12 @@ function setup() {
   })
   const docRenameChannel = new BroadcastChannel('tab-rename-channel')
   docRenameChannel.addEventListener('message', (event) => {
-    console.log(event.data)
     const { oldName, newName } = event.data
     if (oldName === currentDocName) filenameInput.value = newName
     renameDocTo(oldName, newName)
   })
   const docDeleteChannel = new BroadcastChannel('tab-delete-channel')
   docDeleteChannel.addEventListener('message', (event) => {
-    console.log(event.data)
     const { deletedDocName } = event.data
     deleteDocument(deletedDocName)
   })
