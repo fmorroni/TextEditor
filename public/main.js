@@ -301,7 +301,8 @@ function setup() {
     const startIdx = getLineIdx(startPos)
     const endIdx = getLineIdx(endPos)
 
-    textarea.setSelectionRange(getStartOfLinePos(startIdx), getEndOfLinePos(endIdx))
+    const startOfLine = getStartOfLinePos(startIdx)
+    textarea.setSelectionRange(startOfLine, getEndOfLinePos(endIdx))
 
     let firstLineTabs = indentLine(startIdx, tabCount)
     let totTabs = firstLineTabs
@@ -309,15 +310,29 @@ function setup() {
       totTabs += indentLine(i, tabCount)
     }
 
-    document.execCommand(
-      'insertText',
-      false,
-      documents[currentDocName]
-        .slice(startIdx, endIdx + 1)
-        .map((line) => '\t'.repeat(line.tabs) + line.value)
-        .join('\n')
-    )
-    textarea.setSelectionRange(startPos + firstLineTabs, endPos + totTabs)
+    // This was needed to take into account a very specific bug I found that happens when doing
+    // an 'insertText' execCommand with '' as value while the last line of a textarea is highlighted.
+    if (
+      startIdx === documents[currentDocName].length - 1 &&
+      documents[currentDocName][startIdx].value === '' &&
+      documents[currentDocName][startIdx].tabs === 0 &&
+      tabCount < 0
+    ) {
+      document.execCommand('delete', false, null)
+    } else {
+      document.execCommand(
+        'insertText',
+        false,
+        documents[currentDocName]
+          .slice(startIdx, endIdx + 1)
+          .map((line) => '\t'.repeat(line.tabs) + line.value)
+          .join('\n')
+      )
+    }
+    const selStart = (startPos + firstLineTabs >= startOfLine) ? startPos + firstLineTabs : startOfLine
+    const startOfNextLine = getStartOfLinePos(endIdx)
+    const selEnd = (endPos + totTabs >= startOfNextLine) ? endPos + totTabs : startOfNextLine;
+    textarea.setSelectionRange(selStart, selEnd)
   }
 }
 
